@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Agent Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{brand:{600:'#0aa356',700:'#0a8147'}}}}}</script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-[320px_1fr] gap-4 p-4">
+    <aside class="bg-white border border-gray-200 rounded-xl p-4">
+      <h2 class="text-base font-semibold">Agent Login</h2>
+      <div id="loginPane" class="space-y-2 mt-2">
+        <input id="email" placeholder="Email" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"/>
+        <input id="password" type="password" placeholder="Password" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"/>
+        <select id="department" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"></select>
+        <button id="btnLogin" class="w-full rounded-md bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm">Login & Go Online</button>
+        <div id="loginMsg" class="text-sm text-red-600"></div>
+      </div>
+
+      <h3 class="mt-6 mb-2 font-semibold">Pending Chats</h3>
+      <div id="pending" class="rounded-lg border border-dashed border-gray-300 p-3 text-sm text-gray-600">Login first.</div>
+    </aside>
+
+    <main class="bg-white border border-gray-200 rounded-xl flex flex-col overflow-hidden">
+      <header id="status" class="px-4 py-3 border-b border-gray-200 text-gray-700">Not connected</header>
+      <section class="flex-1 grid" style="grid-template-rows: 1fr auto;">
+        <div id="messages" class="overflow-y-auto p-4 space-y-2 bg-white"></div>
+        <div id="composer" class="bg-gray-50 border-t border-gray-200 p-3 flex flex-wrap items-center gap-2">
+          <input id="msgInput" placeholder="Type a reply..." disabled
+                 class="flex-1 min-w-[240px] rounded-md border-gray-300 focus:border-brand-600 focus:ring-brand-600 px-3 py-2 text-sm" />
+          <input type="file" id="fileInput" disabled
+                 class="text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+          <button id="sendFileBtn" disabled
+                  class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Send File</button>
+          <button id="sendBtn" disabled
+                  class="rounded-md bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm">Send</button>
+          <button id="closeBtn" disabled
+                  class="rounded-md bg-red-600 hover:bg-red-700 text-white px-3 py-2 text-sm">Close</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/agent/js/agent.js" type="module"></script>
+</body>
+</html>

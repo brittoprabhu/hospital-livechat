@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Accept Agent Invitation</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center">
+  <main class="w-full max-w-md bg-white border border-gray-200 rounded-xl shadow p-6">
+    <h1 class="text-lg font-semibold mb-2">Accept Invitation</h1>
+    <p class="text-sm text-gray-600 mb-4">Set up your agent account.</p>
+    <div class="space-y-3">
+      <input id="name" placeholder="Full name" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm"/>
+      <input id="password" type="password" placeholder="Create password" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm"/>
+      <button id="btnAccept" class="w-full rounded-md bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-sm">Create Account</button>
+      <p id="msg" class="text-sm"></p>
+    </div>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const btn = document.getElementById('btnAccept');
+    const msg = document.getElementById('msg');
+
+    btn.onclick = async ()=>{
+      msg.textContent=''; msg.className='text-sm';
+      const name = document.getElementById('name').value.trim();
+      const password = document.getElementById('password').value;
+      try{
+        const res = await fetch('/api/agents/accept-invite', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token, name, password })
+        });
+        const j = await res.json();
+        if(!res.ok || j.error){ msg.textContent=j.error||'Failed'; msg.className='text-sm text-red-600'; return; }
+        msg.textContent = j.message || 'Account created. Check email to verify.';
+        msg.className='text-sm text-emerald-700';
+      }catch(e){ msg.textContent='Network error'; msg.className='text-sm text-red-600';}
+    };
+  </script>
+</body></html>

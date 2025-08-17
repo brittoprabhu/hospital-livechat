@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config={theme:{extend:{colors:{brand:{
+      50:'#eefdf4',100:'#d7f8e4',200:'#aaf0c7',300:'#75e4a6',
+      400:'#3bd77f',500:'#12c969',600:'#0aa356',700:'#0a8147',
+      800:'#0a653b',900:'#0a5433'
+    }}}}}
+  </script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-7xl mx-auto p-4 space-y-4">
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-semibold text-gray-800">Admin Dashboard</h1>
+        <p class="text-xs text-gray-500" id="whoami">Not connected</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="btnRefresh" class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Refresh</button>
+        <button id="btnLogout" class="rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 text-sm">Logout</button>
+      </div>
+    </header>
+
+    <!-- Invite -->
+    <section class="bg-white border border-gray-200 rounded-xl p-4">
+      <h2 class="font-semibold mb-2">Invite Agent</h2>
+      <div class="flex flex-wrap gap-2 items-center">
+        <input id="inviteEmail" type="email" placeholder="agent@company.com"
+               class="rounded-md border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500">
+        <select id="inviteDept" class="rounded-md border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500">
+          <option value="">Select department</option>
+        </select>
+        <input id="inviteExpiry" type="number" min="1" value="72" title="Expires (hours)"
+               class="w-28 rounded-md border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500">
+        <button id="btnSendInvite" class="rounded-md bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm">Send Invitation</button>
+      </div>
+      <div id="inviteMsg" class="text-sm mt-2 text-gray-700"></div>
+      <p class="text-xs text-gray-500 mt-1">Ensure SMTP is configured (Gmail App Password or SMTP creds).</p>
+    </section>
+
+    <section class="grid md:grid-cols-2 gap-4">
+      <div class="bg-white border border-gray-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold">Agents</h2>
+          <span class="text-xs text-gray-500">presence updates live</span>
+        </div>
+        <div id="agentsArea" class="text-sm text-gray-600">Loading…</div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold">Recent Chats</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <label>From:<input type="date" id="exportFrom" class="ml-1 rounded-md border-gray-300 px-2 py-1"/></label>
+            <label>To:<input type="date" id="exportTo" class="ml-1 rounded-md border-gray-300 px-2 py-1"/></label>
+            <button id="btnExport" class="rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Export CSV</button>
+          </div>
+        </div>
+        <div id="chatsArea" class="text-sm text-gray-600">Loading…</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/admin/js/dashboard.js" type="module"></script>
+</body>
+</html>
