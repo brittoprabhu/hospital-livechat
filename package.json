@@ -7,7 +7,13 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "node src/migrate.js"
+    "migrate:up": "node-pg-migrate -m src/db/migrations up",
+    "migrate:down": "node-pg-migrate -m src/db/migrations down",
+    "migrate:list": "node-pg-migrate -m src/db/migrations list",
+     "seed": "node --no-warnings --experimental-json-modules scripts/seedData.js",
+ "seed:intel": "node --no-warnings --experimental-json-modules scripts/seedIntelligenceData.js",
+ "seed:faqtree": "node --no-warnings --experimental-json-modules scripts/seedFaqTree.js",
+ "seed:faqdepartments": "node --no-warnings --experimental-json-modules scripts/seedAssign-Faq-Departments.js"
   },
   "keywords": [
     "chat",
@@ -33,9 +39,12 @@
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.1",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+        "winston": "^3.x.x"
   },
+    
   "devDependencies": {
+    "node-pg-migrate": "8.0.3",
     "nodemon": "^3.1.0"
   }
 }

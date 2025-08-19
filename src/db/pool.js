@@ -3,7 +3,7 @@ const { Pool } = pkg;
 
 let pool;
 
-export function createPool() {
+export function getPool() {
   if (pool) return pool;
 
   const connectionString = process.env.DATABASE_URL || undefined;

@@ -1,0 +1,16 @@
+export async function up(pgm) {
+  await pgm.addColumn('faq_entries', {
+    department: {
+      type: 'varchar(100)',
+      notNull: false,
+      default: null,
+    },
+  });
+
+  await pgm.createIndex('faq_entries', 'department');
+}
+
+export async function down(pgm) {
+  await pgm.dropIndex('faq_entries', 'department');
+  await pgm.dropColumn('faq_entries', 'department');
+}

@@ -52,7 +52,9 @@ export default function AdminRoutes(pool) {
             FROM conversations
            ORDER BY created_at DESC
            LIMIT 200`);
-        res.json({ agents: agents.rows, chats: chats.rows, departments: loadDepartments() });
+           const departments = await loadDepartments();
+res.json({ agents: agents.rows, chats: chats.rows, departments });
+        
       } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
     }
   );
@@ -68,29 +70,37 @@ export default function AdminRoutes(pool) {
       } catch (e) { console.error(e); res.status(500).json({ error: 'Approve failed' }); }
     }
   );
+router.post('/api/admin/invitations',
+  authenticateToken, adminOnly, adminRateLimiter, requireAllowedIp,
+  async (req, res) => {
+    try {
+      const { email, department, expiresInHours = 72 } = req.body;
 
-  router.post('/api/admin/invitations',
-    authenticateToken, adminOnly, adminRateLimiter, requireAllowedIp,
-    async (req, res) => {
-      try {
-        const { email, department, expiresInHours = 72 } = req.body;
-        if (!email || !department || !loadDepartments().includes(department)) {
-          return res.status(400).json({ error: 'Email and valid department required' });
-        }
-        const token = newTokenHex(24);
-        const expiresAt = new Date(Date.now() + Number(expiresInHours) * 3600 * 1000);
-        const result = await pool.query(
-          `INSERT INTO agent_invitations (email, department, token, expires_at, created_by_admin_id)
-           VALUES ($1, $2, $3, $4, $5) RETURNING id, token, expires_at`,
-          [email.toLowerCase(), department, token, expiresAt, req.user.id]
-        );
-        const acceptUrl = `${ENV.PUBLIC_URL}/agent-accept.html?token=${token}`;
-        await sendEmail(email, 'Your Agent Invitation',
-          `You have been invited as an agent for ${department}.\n\nAccept: ${acceptUrl}\n\nExpires ${expiresAt.toISOString()}.`);
-        res.json({ ok: true, token: result.rows[0].token, expiresAt: result.rows[0].expires_at });
-      } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to create invitation' }); }
+      const departments = await loadDepartments(); // FIX: Await async function
+      if (!email || !department || !departments.includes(department)) {
+        return res.status(400).json({ error: 'Email and valid department required' });
+      }
+
+      const token = newTokenHex(24);
+      const expiresAt = new Date(Date.now() + Number(expiresInHours) * 3600 * 1000);
+      const result = await pool.query(
+        `INSERT INTO agent_invitations (email, department, token, expires_at, created_by_admin_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, token, expires_at`,
+        [email.toLowerCase(), department, token, expiresAt, req.user.id]
+      );
+
+      const acceptUrl = `${ENV.PUBLIC_URL}/agent-accept.html?token=${token}`;
+      await sendEmail(email, 'Your Agent Invitation',
+        `You have been invited as an agent for ${department}.\n\nAccept: ${acceptUrl}\n\nExpires ${expiresAt.toISOString()}.`
+      );
+
+      res.json({ ok: true, token: result.rows[0].token, expiresAt: result.rows[0].expires_at });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to create invitation' });
     }
-  );
+});
+
 
   router.get('/api/admin/chats/export',
     authenticateToken, adminOnly, adminRateLimiter, requireAllowedIp,

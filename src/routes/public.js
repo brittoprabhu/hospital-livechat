@@ -3,9 +3,16 @@ import { ENV, loadDepartments } from '../config/index.js';
 
 const router = express.Router();
 
-router.get('/api/departments', (_req, res) => {
-  res.json({ departments: loadDepartments() });
+router.get('/api/departments', async (_req, res) => {
+  try {
+    const departments = await loadDepartments();
+    res.json({ departments });
+  } catch (e) {
+    console.error('[ERROR] Failed to load departments:', e);
+    res.status(500).json({ error: 'Failed to load departments' });
+  }
 });
+
 
 router.get('/api/quick-contacts', (_req, res) => {
   res.json({

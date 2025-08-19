@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { verifyToken } from '../middleware/auth.js';
 import { loadDepartments } from '../config/index.js';
+import { processBotMessage } from '../services/botservice.js'; 
 
 export function socketHandlers(io, pool) {
   async function getPendingList(department) {
@@ -54,32 +55,78 @@ export function socketHandlers(io, pool) {
     });
 
     // PATIENT: new conversation
-    socket.on('patient:new_conversation', async ({ department, patientName }) => {
-      try {
-        const valid = loadDepartments();
-        if (!department || !valid.includes(department)) {
-          socket.emit('error', { message: 'Department required/invalid' });
-          return;
-        }
-        const id = crypto.randomBytes(12).toString('hex');
-        await pool.query(
-          'INSERT INTO conversations (id, department, patient_name, assigned_agent_id, status) VALUES ($1,$2,$3,$4,$5)',
-          [id, department, patientName || 'Guest', null, 'pending']
-        );
-        socket.join(`chat_${id}`);
-        socket.emit('patient:created', { chatId: id, status: 'pending' });
+   // const crypto = require('crypto');
 
-        await broadcastPending(department);
-      } catch (e) { console.error(e); }
+socket.on('patient:new_conversation', async ({ patientName }) => {
+  try {
+    const id = crypto.randomBytes(12).toString('hex');
+
+    await pool.query(
+      'INSERT INTO conversations (id, department, patient_name, assigned_agent_id, status) VALUES ($1, $2, $3, $4, $5)',
+      [id, '', patientName || 'Guest', null, 'pending']
+    );
+
+    socket.join(`chat_${id}`);
+
+    // Notify patient
+    socket.emit('patient:created', { chatId: id, status: 'pending' });
+
+    // Initial bot reply
+    socket.emit('bot_reply', {
+      text: `👋 Hello ${patientName || 'Guest'}! Welcome to ABC Hospital. How can I help you today?`,
+      suggestions: [] // Optional: add default FAQs if needed
     });
+
+    // (Optional) Notify agents that a new chat is pending
+    // await broadcastPending(); // If you no longer need to notify agents, you can remove this
+
+  } catch (e) {
+    console.error('[Error in patient:new_conversation]', e);
+  }
+});
 
     // PATIENT: message
-    socket.on('patient:message', async ({ chatId, text }) => {
-      try {
-        await pool.query('INSERT INTO messages (chat_id, sender, text) VALUES ($1,$2,$3)', [chatId, 'patient', text]);
-        io.to(`chat_${chatId}`).emit('chat:message', { chatId, from: 'patient', text, at: new Date().toISOString() });
-      } catch (e) { console.error(e); }
+  socket.on('patient:set_department', async ({ chatId, department }) => {
+  try {
+    await pool.query(
+      'UPDATE conversations SET department=$1, updated_at=NOW() WHERE id=$2',
+      [department, chatId]
+    );
+
+    // Broadcast to agents in that department
+    await broadcastPending(department);
+
+    console.log(`[patient:set_department] Chat ${chatId} set to department ${department}`);
+  } catch (e) {
+    console.error('[ERROR] patient:set_department', e);
+  }
+});
+
+
+socket.on('patient:message', async ({ chatId, text }) => {
+  try {
+    const context = {}; // Optional: store session state here
+    console.log(`[patient:message] chatId=${chatId}, text="${text}"`);
+
+    await pool.query('INSERT INTO messages (chat_id, sender, text) VALUES ($1,$2,$3)', [chatId, 'patient', text]);
+
+    io.to(`chat_${chatId}`).emit('chat:message', {
+      chatId,
+      from: 'patient',
+      text,
+      at: new Date().toISOString()
     });
+
+    await processBotMessage({ message: text, socket: io.to(`chat_${chatId}`), context });
+  } catch (e) {
+    console.error('[ERROR] patient:message handler:', e);
+  }
+});
+
+socket.on('bot_feedback', feedback => {
+  if (!context.feedback) context.feedback = 0;
+  context.feedback += feedback === 'down' ? -1 : 1;
+});
 
     // History
     socket.on('chat:history_request', async ({ chatId }) => {
@@ -95,15 +142,24 @@ export function socketHandlers(io, pool) {
     // AGENT: register online
     socket.on('agent:register', async ({ token, department }) => {
       try {
-        const valid = loadDepartments();
+        const valid = await loadDepartments(); // ✅ Must await if async
+
+
+if (!Array.isArray(valid)) {
+  console.error('loadDepartments() did not return array:', valid);
+}
         const payload = verifyToken(token);
+        console.log(`[agent:register] Agent ${payload.id} joined dept_${department}`);
         if (!payload || payload.role !== 'agent') return socket.emit('error', { message: 'Invalid agent token' });
         if (!department || !valid.includes(department)) return socket.emit('error', { message: 'Invalid department' });
-
+        
+         socket.join('agents'); // 👈 Join global room
         socket.join(`dept_${department}`);
         socket.data.role = 'agent';
         socket.data.department = department;
         socket.data.agentId = String(payload.id);
+
+        console.log(`✅ Agent [${department}] and global agent room`);
         socket.emit('agent:registered', { agentId: payload.id, department });
 
         await setAgentStatus(payload.id, 'online');
@@ -119,6 +175,8 @@ export function socketHandlers(io, pool) {
       try {
         const agentId = socket.data?.agentId;
         const department = socket.data?.department;
+        console.log(`[agent:accept] Agent ${agentId} accepted chat ${chatId}`);
+
         if (!agentId || !department) return;
 
         const res = await pool.query(
@@ -183,4 +241,44 @@ export function socketHandlers(io, pool) {
       } catch (e) { console.error(e); }
     });
   });
+
+
+  
+}
+// ... your existing code
+export function makeBroadcastHelpers(io, pool) {
+  async function getPendingList(department) {
+    const { rows } = await pool.query(
+      `SELECT id, patient_name AS "patientName", created_at AS "createdAt", status
+         FROM conversations
+        WHERE department = $1 AND status = 'pending'
+        ORDER BY created_at ASC`,
+      [department]
+    );
+    return rows;
+  }
+
+  async function broadcastAgentPresence() {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, department, status, last_seen, is_verified, is_approved
+         FROM agents`
+    );
+    for (const s of await io.fetchSockets()) {
+      if (s.data?.role === 'admin_socket') s.emit('admin:agents', rows);
+    }
+  }
+
+  async function broadcastPending(department) {
+    const items = await getPendingList(department);
+    console.log(`[broadcastPending] Sending pending list to dept_${department}`);
+
+    const room = `dept_${department}`;
+    for (const s of await io.in(room).fetchSockets()) {
+      if (s.data?.role === 'agent' && s.data?.department === department) {
+        s.emit('agent:pending_list', items);
+      }
+    }
+  }
+
+  return { getPendingList, broadcastPending, broadcastAgentPresence };
 }

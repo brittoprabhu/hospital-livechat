@@ -2,7 +2,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import { getPool } from '../db/pool.js'; // or correct path based on your project
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.join(__dirname, '..', '..');
@@ -40,14 +40,15 @@ export const ENV = {
     .split(',').map(s => s.trim()).filter(Boolean),
 };
 
-export function loadDepartments() {
-  // Looks for /data/departments.json at project root
-  const p = path.join(ROOT, 'data', 'departments.json');
+
+
+export async function loadDepartments() {
+  const pool = getPool();
   try {
-    const txt = fs.readFileSync(p, 'utf8');
-    const j = JSON.parse(txt);
-    return Array.isArray(j.departments) ? j.departments : [];
-  } catch {
-    return ['Eye', 'Cardiology', 'Orthopedics', 'ENT', 'Neurology', 'General'];
+    const result = await pool.query('SELECT name FROM departments');
+    return result.rows.map(row => row.name);
+  } catch (err) {
+    console.error('Failed to load departments from DB:', err);
+    return ['General']; // fallback
   }
 }

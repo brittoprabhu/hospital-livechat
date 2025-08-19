@@ -51,6 +51,13 @@ export default function AgentRoutes(pool) {
     } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
   });
 
+// Example Express route
+router.get('/api/faqs/top', async (req, res) => {
+  const faqs = await pool.query('SELECT id, question FROM faq_entries WHERE parent_id IS NULL ORDER BY id');
+  res.json(faqs.rows);
+});
+
+
   // Accept invite -> create agent -> send email verification
   router.post('/api/agents/accept-invite', authLimiter, async (req, res) => {
     try {
