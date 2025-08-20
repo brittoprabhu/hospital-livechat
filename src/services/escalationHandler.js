@@ -25,11 +25,11 @@ export async function handleEscalation(reason, { socket, context, message, escal
 }
 
 function escalateToAgent(reason, socket, context, escalate, department) {
-  socket.emit('bot_reply', { text: 'You are now being connected to a human agent.', source: 'bot' });
+  socket.emit('bot_reply', { text: 'A human agent has been notified and will connect with you once they accept your request.', source: 'bot' });
   socket.emit('escalate_to_agent', {
     reason,
     context,
-    message: 'You are now being connected to a human agent.'
+    message: 'A human agent has been notified and will connect with you once they accept your request.'
   });
   context.escalated = true;
   if (typeof escalate === 'function') {
