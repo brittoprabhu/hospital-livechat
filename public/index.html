@@ -32,15 +32,8 @@
 <body>
   <div class="mx-auto my-2 w-full max-w-md bg-white shadow-xl rounded-2xl overflow-hidden ring-1 ring-gray-200 grid"
        style="min-height: 560px; height: 80vh; grid-template-rows: auto 1fr auto;">
-    
-    <!-- Header -->
-    <header class="bg-brand-600 text-white px-4 py-3 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">🏥</div>
-      <div>
-        <div class="font-semibold leading-tight">ABC Hospital Support</div>
-        <div class="text-white/80 text-sm -mt-0.5">We’re here to help</div>
-      </div>
-    </header>
+
+    <div id="banner"></div>
 
     <!-- Main Chat Body -->
     <main class="overflow-y-auto bg-white" id="chatSection">
@@ -92,5 +85,6 @@
   <!-- Socket.IO & JS -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="/widget/js/widget.js" type="module"></script>
+  <script src="/js/banner.js"></script>
 </body>
 </html>
