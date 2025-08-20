@@ -12,6 +12,17 @@ document.getElementById('btnRefresh').onclick = ()=> loadOverview();
 document.getElementById('btnExport').onclick = exportCsv;
 document.getElementById('btnSendInvite').onclick = sendInvitation;
 
+const navBtns = document.querySelectorAll('.nav-btn');
+const sections = document.querySelectorAll('main section');
+navBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.target;
+    sections.forEach(sec => sec.classList.toggle('hidden', sec.id !== target));
+    navBtns.forEach(b => b.classList.remove('bg-gray-200'));
+    btn.classList.add('bg-gray-200');
+  });
+});
+
 document.getElementById('whoami').textContent = 'Connected with admin token';
 
 // socket live presence
