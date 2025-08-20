@@ -113,25 +113,39 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
 });
 
 
-socket.on('patient:message', async ({ chatId, text }) => {
-  try {
-    const context = {}; // Optional: store session state here
-    console.log(`[patient:message] chatId=${chatId}, text="${text}"`);
+  socket.on('patient:message', async ({ chatId, text }) => {
+    try {
+      const context = {}; // Optional: store session state here
+      console.log(`[patient:message] chatId=${chatId}, text="${text}"`);
 
-    await pool.query('INSERT INTO messages (chat_id, sender, text) VALUES ($1,$2,$3)', [chatId, 'patient', text]);
+      await pool.query('INSERT INTO messages (chat_id, sender, text) VALUES ($1,$2,$3)', [chatId, 'patient', text]);
 
-    io.to(`chat_${chatId}`).emit('chat:message', {
-      chatId,
-      from: 'patient',
-      text,
-      at: new Date().toISOString()
-    });
+      io.to(`chat_${chatId}`).emit('chat:message', {
+        chatId,
+        from: 'patient',
+        text,
+        at: new Date().toISOString()
+      });
 
-    await processBotMessage({ message: text, socket: io.to(`chat_${chatId}`), context });
-  } catch (e) {
-    console.error('[ERROR] patient:message handler:', e);
-  }
-});
+      const escalate = async ({ department } = {}) => {
+        let targetDept = department;
+        if (!targetDept) {
+          const res = await pool.query('SELECT department FROM conversations WHERE id=$1', [chatId]);
+          targetDept = res.rows[0]?.department;
+        }
+        if (!targetDept) {
+          const depts = await loadDepartments();
+          targetDept = depts[0] || 'General';
+        }
+        await pool.query('UPDATE conversations SET department=$1, updated_at=NOW() WHERE id=$2', [targetDept, chatId]);
+        await broadcastPending(targetDept);
+      };
+
+      await processBotMessage({ message: text, socket: io.to(`chat_${chatId}`), context, escalate });
+    } catch (e) {
+      console.error('[ERROR] patient:message handler:', e);
+    }
+  });
 
 socket.on('bot_feedback', feedback => {
   if (!context.feedback) context.feedback = 0;

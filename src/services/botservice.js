@@ -20,13 +20,13 @@ export async function processBotMessage({ message, socket, context, escalate }) 
         socket.emit('bot_reply', { text: "I'm not sure I understood that. Could you clarify?" });
         context.clarifiedOnce = true;
       } else {
-        handleEscalation('low_confidence', { socket, context });
+        handleEscalation('low_confidence', { socket, context, message, escalate });
       }
     }
   } else if (intent === 'emergency') {
-    handleEscalation('emergency_keyword', { socket, context });
+    handleEscalation('emergency_keyword', { socket, context, message, escalate });
   } else if (intent === 'human_request') {
-    handleEscalation('user_requested_human', { socket, context });
+    handleEscalation('user_requested_human', { socket, context, message, escalate });
   } else {
     socket.emit('bot_reply', { text: "I didn't understand that. Would you like to talk to a human agent?" });
   }
