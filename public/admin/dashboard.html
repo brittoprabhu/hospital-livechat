@@ -13,8 +13,9 @@
     }}}}}
   </script>
 </head>
-<body class="bg-gray-50">
-  <div class="flex h-screen">
+<body class="bg-gray-50 flex flex-col min-h-screen">
+  <div id="banner"></div>
+  <div class="flex flex-1">
     <aside class="w-48 bg-white border-r p-4">
       <nav class="flex flex-col gap-2">
         <button data-target="invite" class="nav-btn text-left px-2 py-1 rounded bg-gray-200">Invite Agent</button>
@@ -73,5 +74,6 @@
   </div>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="/admin/js/dashboard.js" type="module"></script>
+  <script src="/js/banner.js"></script>
 </body>
 </html>

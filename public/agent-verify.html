@@ -4,8 +4,9 @@
 <title>Verify Email</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-gray-50 flex items-center justify-center">
-  <main class="w-full max-w-md bg-white border border-gray-200 rounded-xl shadow p-6">
+<body class="min-h-screen bg-gray-50 flex flex-col">
+  <div id="banner"></div>
+  <main class="flex-1 w-full max-w-md bg-white border border-gray-200 rounded-xl shadow p-6 mx-auto flex flex-col justify-center">
     <h1 class="text-lg font-semibold mb-2">Verify Email</h1>
     <p class="text-sm text-gray-600 mb-4">Final step before admin approval.</p>
     <p id="msg" class="text-sm">Verifying…</p>
@@ -27,4 +28,5 @@
       }catch(e){ msg.textContent='Network error'; msg.className='text-sm text-red-600';}
     })();
   </script>
+  <script src="/js/banner.js"></script>
 </body></html>

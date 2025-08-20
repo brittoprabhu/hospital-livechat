@@ -9,8 +9,9 @@
     tailwind.config={theme:{extend:{colors:{brand:{600:'#0aa356',700:'#0a8147'}}}}}
   </script>
 </head>
-<body class="min-h-screen bg-gray-50 flex items-center justify-center">
-  <main class="w-full max-w-sm bg-white rounded-xl shadow border border-gray-200 p-6">
+<body class="min-h-screen bg-gray-50 flex flex-col">
+  <div id="banner"></div>
+  <main class="flex-1 w-full max-w-sm bg-white rounded-xl shadow border border-gray-200 p-6 mx-auto flex flex-col justify-center">
     <h1 class="text-lg font-semibold text-gray-800">Admin Login</h1>
     <p class="text-sm text-gray-500 mb-4">Sign in to manage agents & chats</p>
 
@@ -29,5 +30,6 @@
   </main>
 
   <script src="/admin/js/login.js" type="module"></script>
+  <script src="/js/banner.js"></script>
 </body>
 </html>
