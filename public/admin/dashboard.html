@@ -14,20 +14,27 @@
   </script>
 </head>
 <body class="bg-gray-50">
-  <div class="max-w-7xl mx-auto p-4 space-y-4">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-semibold text-gray-800">Admin Dashboard</h1>
-        <p class="text-xs text-gray-500" id="whoami">Not connected</p>
-      </div>
-      <div class="flex gap-2">
-        <button id="btnRefresh" class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Refresh</button>
-        <button id="btnLogout" class="rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 text-sm">Logout</button>
-      </div>
-    </header>
+  <div class="flex h-screen">
+    <aside class="w-48 bg-white border-r p-4">
+      <nav class="flex flex-col gap-2">
+        <button data-target="invite" class="nav-btn text-left px-2 py-1 rounded bg-gray-200">Invite Agent</button>
+        <button data-target="agents" class="nav-btn text-left px-2 py-1 rounded">Agents</button>
+        <button data-target="chats" class="nav-btn text-left px-2 py-1 rounded">Recent Chats</button>
+      </nav>
+    </aside>
+    <main class="flex-1 p-4 space-y-4 overflow-y-auto">
+      <header class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-semibold text-gray-800">Admin Dashboard</h1>
+          <p class="text-xs text-gray-500" id="whoami">Not connected</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnRefresh" class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Refresh</button>
+          <button id="btnLogout" class="rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 text-sm">Logout</button>
+        </div>
+      </header>
 
-    <!-- Invite -->
-    <section class="bg-white border border-gray-200 rounded-xl p-4">
+      <section id="invite" class="bg-white border border-gray-200 rounded-xl p-4">
       <h2 class="font-semibold mb-2">Invite Agent</h2>
       <div class="flex flex-wrap gap-2 items-center">
         <input id="inviteEmail" type="email" placeholder="agent@company.com"
@@ -41,18 +48,17 @@
       </div>
       <div id="inviteMsg" class="text-sm mt-2 text-gray-700"></div>
       <p class="text-xs text-gray-500 mt-1">Ensure SMTP is configured (Gmail App Password or SMTP creds).</p>
-    </section>
+      </section>
 
-    <section class="grid md:grid-cols-2 gap-4">
-      <div class="bg-white border border-gray-200 rounded-xl p-4">
+      <section id="agents" class="bg-white border border-gray-200 rounded-xl p-4 hidden">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-semibold">Agents</h2>
           <span class="text-xs text-gray-500">presence updates live</span>
         </div>
         <div id="agentsArea" class="text-sm text-gray-600">Loading…</div>
-      </div>
+      </section>
 
-      <div class="bg-white border border-gray-200 rounded-xl p-4">
+      <section id="chats" class="bg-white border border-gray-200 rounded-xl p-4 hidden">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-semibold">Recent Chats</h2>
           <div class="flex items-center gap-2 text-sm">
@@ -62,10 +68,9 @@
           </div>
         </div>
         <div id="chatsArea" class="text-sm text-gray-600">Loading…</div>
-      </div>
-    </section>
+      </section>
+    </main>
   </div>
-
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="/admin/js/dashboard.js" type="module"></script>
 </body>
