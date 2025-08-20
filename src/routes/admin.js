@@ -76,7 +76,7 @@ router.post('/api/admin/invitations',
     try {
       const { email, department, expiresInHours = 72 } = req.body;
 
-      const departments = await loadDepartments(); // FIX: Await async function
+      const departments = await loadDepartments(); // Fetch departments
       if (!email || !department || !departments.includes(department)) {
         return res.status(400).json({ error: 'Email and valid department required' });
       }
