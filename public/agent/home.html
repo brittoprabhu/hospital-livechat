@@ -10,21 +10,15 @@
 <body class="bg-gray-50">
   <div class="max-w-6xl mx-auto grid md:grid-cols-[320px_1fr] gap-4 p-4">
     <aside class="bg-white border border-gray-200 rounded-xl p-4">
-      <h2 class="text-base font-semibold">Agent Login</h2>
-      <div id="loginPane" class="space-y-2 mt-2">
-        <input id="email" placeholder="Email" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"/>
-        <input id="password" type="password" placeholder="Password" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"/>
-        <select id="department" class="w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:ring-brand-600 focus:border-brand-600"></select>
-        <button id="btnLogin" class="w-full rounded-md bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm">Login & Go Online</button>
-        <div id="loginMsg" class="text-sm text-red-600"></div>
-      </div>
-
-      <h3 class="mt-6 mb-2 font-semibold">Pending Chats</h3>
-      <div id="pending" class="rounded-lg border border-dashed border-gray-300 p-3 text-sm text-gray-600">Login first.</div>
+      <h3 class="mb-2 font-semibold">Pending Chats</h3>
+      <div id="pending" class="rounded-lg border border-dashed border-gray-300 p-3 text-sm text-gray-600">Loading...</div>
     </aside>
 
     <main class="bg-white border border-gray-200 rounded-xl flex flex-col overflow-hidden">
-      <header id="status" class="px-4 py-3 border-b border-gray-200 text-gray-700">Not connected</header>
+      <header class="flex items-center justify-between px-4 py-3 border-b border-gray-200 text-gray-700">
+        <div id="status">Not connected</div>
+        <button id="logoutBtn" class="rounded-md bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-sm">Logout</button>
+      </header>
       <section class="flex-1 grid" style="grid-template-rows: 1fr auto;">
         <div id="messages" class="overflow-y-auto p-4 space-y-2 bg-white"></div>
         <div id="composer" class="bg-gray-50 border-t border-gray-200 p-3 flex flex-wrap items-center gap-2">
