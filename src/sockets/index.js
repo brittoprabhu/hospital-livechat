@@ -212,8 +212,10 @@ if (!Array.isArray(valid)) {
         await setAgentStatus(payload.id, 'online');
         await broadcastAgentPresence();
 
-        const items = await getPendingList(department);
-        socket.emit('agent:pending_list', items);
+        // include both department-specific and unassigned pending chats
+        const deptItems = await getPendingList(department);
+        const unassignedItems = await getPendingList();
+        socket.emit('agent:pending_list', [...deptItems, ...unassignedItems]);
       } catch (e) { console.error(e); socket.emit('error', { message: 'Agent register failed' }); }
     });
 
@@ -228,8 +230,9 @@ if (!Array.isArray(valid)) {
 
         const res = await pool.query(
           `UPDATE conversations
-              SET assigned_agent_id=$1, status='active', updated_at=NOW()
-            WHERE id=$2 AND department=$3 AND status='pending'
+              SET assigned_agent_id=$1, status='active', department=$3, updated_at=NOW()
+            WHERE id=$2 AND status='pending'
+              AND (department=$3 OR department='' OR department IS NULL)
               AND (assigned_agent_id IS NULL OR assigned_agent_id=0)`,
           [agentId, chatId, department]
         );
@@ -240,6 +243,7 @@ if (!Array.isArray(valid)) {
         await broadcastAgentPresence();
 
         io.to(`chat_${chatId}`).emit('chat:assigned', { chatId, agentName: `Agent#${agentId}`, assignedAgentId: agentId });
+        await broadcastPending();
         await broadcastPending(department);
       } catch (e) { console.error(e); socket.emit('agent:accept_failed', { reason: 'Server error' }); }
     });
