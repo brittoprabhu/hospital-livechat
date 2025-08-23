@@ -108,8 +108,6 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
       suggestions: [] // Optional: add default FAQs if needed
     });
 
-    // Notify agents that a new chat without department is pending
-    await broadcastPending();
 
   } catch (e) {
     console.error('[Error in patient:new_conversation]', e);
