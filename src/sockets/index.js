@@ -5,12 +5,21 @@ import { processBotMessage } from '../services/botservice.js';
 
 export function socketHandlers(io, pool) {
   async function getPendingList(department) {
+    if (department) {
+      const rows = await pool.query(
+        `SELECT id, patient_name AS "patientName", created_at AS "createdAt", status
+           FROM conversations
+          WHERE department=$1 AND status='pending'
+          ORDER BY created_at ASC`,
+        [department]
+      );
+      return rows.rows;
+    }
     const rows = await pool.query(
       `SELECT id, patient_name AS "patientName", created_at AS "createdAt", status
          FROM conversations
-        WHERE department=$1 AND status='pending'
-        ORDER BY created_at ASC`,
-      [department]
+        WHERE (department='' OR department IS NULL) AND status='pending'
+        ORDER BY created_at ASC`
     );
     return rows.rows;
   }
@@ -50,10 +59,14 @@ export function socketHandlers(io, pool) {
 
   async function broadcastPending(department) {
     const items = await getPendingList(department);
-    const room = `dept_${department}`;
-    const sockets = await io.in(room).fetchSockets();
-    if (sockets.length) {
-      io.to(room).emit('agent:pending_list', items);
+    if (department) {
+      const room = `dept_${department}`;
+      const sockets = await io.in(room).fetchSockets();
+      if (sockets.length) {
+        io.to(room).emit('agent:pending_list', items);
+      } else {
+        io.to('agents').emit('agent:pending_list', items);
+      }
     } else {
       io.to('agents').emit('agent:pending_list', items);
     }
@@ -95,8 +108,8 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
       suggestions: [] // Optional: add default FAQs if needed
     });
 
-    // (Optional) Notify agents that a new chat is pending
-    // await broadcastPending(); // If you no longer need to notify agents, you can remove this
+    // Notify agents that a new chat without department is pending
+    await broadcastPending();
 
   } catch (e) {
     console.error('[Error in patient:new_conversation]', e);
@@ -113,6 +126,7 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
 
     // Broadcast to agents in that department
     await broadcastPending(department);
+    await broadcastPending();
 
     console.log(`[patient:set_department] Chat ${chatId} set to department ${department}`);
   } catch (e) {
@@ -147,6 +161,7 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
         }
         await pool.query('UPDATE conversations SET department=$1, updated_at=NOW() WHERE id=$2', [targetDept, chatId]);
         await broadcastPending(targetDept);
+        await broadcastPending();
       };
 
       await processBotMessage({ message: text, socket: io.to(`chat_${chatId}`), context, escalate });
@@ -305,12 +320,21 @@ if (!Array.isArray(valid)) {
 // ... your existing code
 export function makeBroadcastHelpers(io, pool) {
   async function getPendingList(department) {
+    if (department) {
+      const { rows } = await pool.query(
+        `SELECT id, patient_name AS "patientName", created_at AS "createdAt", status
+           FROM conversations
+          WHERE department = $1 AND status = 'pending'
+          ORDER BY created_at ASC`,
+        [department]
+      );
+      return rows;
+    }
     const { rows } = await pool.query(
       `SELECT id, patient_name AS "patientName", created_at AS "createdAt", status
          FROM conversations
-        WHERE department = $1 AND status = 'pending'
-        ORDER BY created_at ASC`,
-      [department]
+        WHERE (department='' OR department IS NULL) AND status = 'pending'
+        ORDER BY created_at ASC`
     );
     return rows;
   }
@@ -327,12 +351,17 @@ export function makeBroadcastHelpers(io, pool) {
 
   async function broadcastPending(department) {
     const items = await getPendingList(department);
-    console.log(`[broadcastPending] Sending pending list to dept_${department}`);
-    const room = `dept_${department}`;
-    const sockets = await io.in(room).fetchSockets();
-    if (sockets.length) {
-      io.to(room).emit('agent:pending_list', items);
+    if (department) {
+      console.log(`[broadcastPending] Sending pending list to dept_${department}`);
+      const room = `dept_${department}`;
+      const sockets = await io.in(room).fetchSockets();
+      if (sockets.length) {
+        io.to(room).emit('agent:pending_list', items);
+      } else {
+        io.to('agents').emit('agent:pending_list', items);
+      }
     } else {
+      console.log('[broadcastPending] Sending pending list to all agents');
       io.to('agents').emit('agent:pending_list', items);
     }
   }
