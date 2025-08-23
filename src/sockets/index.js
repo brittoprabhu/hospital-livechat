@@ -273,11 +273,21 @@ if (!Array.isArray(valid)) {
       try {
         const agentId = socket.data?.agentId;
         if (!agentId) return;
+        if (!targetDept) {
+          return socket.emit('agent:forward_failed', { reason: 'No department specified' });
+        }
+        const valid = await loadDepartments();
+        if (!valid.includes(targetDept)) {
+          return socket.emit('agent:forward_failed', { reason: 'Invalid department' });
+        }
         const { rows } = await pool.query('SELECT department, assigned_agent_id FROM conversations WHERE id=$1 LIMIT 1', [chatId]);
         if (!rows.length || String(rows[0].assigned_agent_id) !== String(agentId)) {
           return socket.emit('agent:forward_failed', { reason: 'Not assigned' });
         }
         const fromDept = rows[0].department;
+        if (fromDept === targetDept) {
+          return socket.emit('agent:forward_failed', { reason: 'Already in department' });
+        }
         await pool.query(`UPDATE conversations SET department=$1, status='pending', assigned_agent_id=NULL, updated_at=NOW() WHERE id=$2`, [targetDept, chatId]);
         socket.leave(`chat_${chatId}`);
         await setAgentStatus(agentId, 'online');
