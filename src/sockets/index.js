@@ -20,6 +20,21 @@ export function socketHandlers(io, pool) {
     catch (e) { console.error('setAgentStatus error', e); }
   }
 
+  async function broadcastDepartmentCounts() {
+    try {
+      const { rows } = await pool.query(
+        `SELECT d.name,
+                d.order,
+                COUNT(a.*) FILTER (WHERE a.status = 'online') AS online
+           FROM departments d
+           LEFT JOIN agents a ON a.department = d.name
+          GROUP BY d.id
+          ORDER BY d.order NULLS LAST, d.id`
+      );
+      io.to('agents').emit('agent:department_counts', rows);
+    } catch (e) { console.error(e); }
+  }
+
   async function broadcastAgentPresence() {
     try {
       const rows = await pool.query(
@@ -29,6 +44,7 @@ export function socketHandlers(io, pool) {
       for (const s of sockets) {
         if (s.data?.role === 'admin_socket') s.emit('admin:agents', rows.rows);
       }
+      await broadcastDepartmentCounts();
     } catch (e) { console.error(e); }
   }
 

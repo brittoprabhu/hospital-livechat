@@ -7,6 +7,7 @@ if(!token || !department){
 }
 
 let socket=null, currentChatId=null;
+let departmentInfo=[];
 
 const statusHeader = document.getElementById('status');
 const pendingDiv = document.getElementById('pending');
@@ -31,6 +32,9 @@ socket = connectAgentSocket(token, department);
 
 socket.on('agent:registered', ({ department })=>{
   statusHeader.textContent = `Online in ${department}`;
+});
+socket.on('agent:department_counts', (rows)=>{
+  departmentInfo = rows || [];
 });
 socket.on('agent:pending_list', renderPending);
 socket.on('agent:accept_failed', ({ reason })=> alert('Accept failed: '+reason));
@@ -95,9 +99,12 @@ sendFileBtn.onclick = async ()=>{
 
 forwardBtn.onclick = async ()=>{
   if(!currentChatId) return;
-  const resp = await fetch('/api/departments');
-  const data = await resp.json();
-  const list = (data.departments||[]).map(d=>`${d.name} (${d.online})`).join(', ');
+  if(!departmentInfo.length){
+    const resp = await fetch('/api/departments');
+    const data = await resp.json();
+    departmentInfo = data.departments || [];
+  }
+  const list = departmentInfo.map(d=>`${d.name} (${d.online})`).join(', ');
   const dept = prompt('Forward to department:\n'+list);
   if(dept){
     socket.emit('agent:forward', { chatId: currentChatId, department: dept.trim() });
