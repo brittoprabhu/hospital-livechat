@@ -16,6 +16,7 @@ const sendBtn = document.getElementById('sendBtn');
 const fileInput = document.getElementById('fileInput');
 const sendFileBtn = document.getElementById('sendFileBtn');
 const closeBtn = document.getElementById('closeBtn');
+const forwardBtn = document.getElementById('forwardBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 
 logoutBtn.onclick = ()=>{
@@ -33,6 +34,13 @@ socket.on('agent:registered', ({ department })=>{
 });
 socket.on('agent:pending_list', renderPending);
 socket.on('agent:accept_failed', ({ reason })=> alert('Accept failed: '+reason));
+socket.on('agent:forward_failed', ({ reason })=> alert('Forward failed: '+reason));
+socket.on('agent:forwarded', ({ chatId:id })=>{
+  if(id!==currentChatId) return;
+  toggleChatControls(false);
+  statusHeader.textContent='Chat forwarded';
+  currentChatId=null;
+});
 
 socket.on('chat:assigned', ({ chatId })=>{
   currentChatId = chatId;
@@ -85,6 +93,17 @@ sendFileBtn.onclick = async ()=>{
   }
 };
 
+forwardBtn.onclick = async ()=>{
+  if(!currentChatId) return;
+  const resp = await fetch('/api/departments');
+  const data = await resp.json();
+  const list = (data.departments||[]).map(d=>`${d.name} (${d.online})`).join(', ');
+  const dept = prompt('Forward to department:\n'+list);
+  if(dept){
+    socket.emit('agent:forward', { chatId: currentChatId, department: dept.trim() });
+  }
+};
+
 closeBtn.onclick = ()=>{
   if(!currentChatId) return;
   socket.emit('chat:close', { chatId: currentChatId });
@@ -113,7 +132,7 @@ function renderPending(items){
 function toggleChatControls(enabled){
   msgInput.disabled = !enabled; sendBtn.disabled = !enabled;
   fileInput.disabled = !enabled; sendFileBtn.disabled = !enabled;
-  closeBtn.disabled = !enabled;
+  closeBtn.disabled = !enabled; forwardBtn.disabled = !enabled;
 }
 
 function addTextBubble(from, text, who, at){

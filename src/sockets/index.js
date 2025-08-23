@@ -249,6 +249,31 @@ if (!Array.isArray(valid)) {
       } catch (e) { console.error(e); }
     });
 
+    // AGENT: forward chat to another department
+    socket.on('agent:forward', async ({ chatId, department: targetDept }) => {
+      try {
+        const agentId = socket.data?.agentId;
+        if (!agentId) return;
+        const { rows } = await pool.query('SELECT department, assigned_agent_id FROM conversations WHERE id=$1 LIMIT 1', [chatId]);
+        if (!rows.length || String(rows[0].assigned_agent_id) !== String(agentId)) {
+          return socket.emit('agent:forward_failed', { reason: 'Not assigned' });
+        }
+        const fromDept = rows[0].department;
+        await pool.query(`UPDATE conversations SET department=$1, status='pending', assigned_agent_id=NULL, updated_at=NOW() WHERE id=$2`, [targetDept, chatId]);
+        socket.leave(`chat_${chatId}`);
+        await setAgentStatus(agentId, 'online');
+        await broadcastAgentPresence();
+        await broadcastPending(targetDept);
+        io.to(`chat_${chatId}`).emit('chat:forwarded', { chatId, department: targetDept });
+        socket.emit('agent:forwarded', { chatId, department: targetDept });
+        // refresh pending list of original department if needed
+        if (fromDept && fromDept !== targetDept) await broadcastPending(fromDept);
+      } catch (e) {
+        console.error(e);
+        socket.emit('agent:forward_failed', { reason: 'Server error' });
+      }
+    });
+
     socket.on('chat:close', async ({ chatId }) => {
       try {
         await pool.query(`UPDATE conversations SET status='closed', updated_at=NOW() WHERE id=$1`, [chatId]);

@@ -149,10 +149,11 @@ async function showDepartmentSelection() {
     return;
   }
 
-  // Convert string array to objects with .name for consistency
-  const departmentObjects = departments.map((name, index) => ({
-    name,
-    order: index  // Optional: use index as order fallback
+  // Normalize department objects and include online counts
+  const departmentObjects = departments.map((d, index) => ({
+    name: d.name,
+    online: d.online || 0,
+    order: d.order ?? index
   }));
 
   // Sort by order (if null, push to end)
@@ -170,7 +171,7 @@ async function showDepartmentSelection() {
   firstThree.forEach(dep => {
     const btn = document.createElement('button');
     btn.className = 'px-3 py-2 rounded-lg bg-white border border-gray-300 hover:border-brand-600 text-sm';
-    btn.textContent = dep.name;
+    btn.textContent = `${dep.name} (${dep.online} online)`;
     btn.onclick = () => selectDepartment(dep.name);
     list.appendChild(btn);
   });
@@ -185,7 +186,7 @@ async function showDepartmentSelection() {
       remaining.forEach(dep => {
         const btn = document.createElement('button');
         btn.className = 'px-3 py-2 rounded-lg bg-white border border-gray-300 hover:border-brand-600 text-sm mt-1';
-        btn.textContent = dep.name;
+        btn.textContent = `${dep.name} (${dep.online} online)`;
         btn.onclick = () => selectDepartment(dep.name);
         list.appendChild(btn);
       });
@@ -221,6 +222,10 @@ socket.on('chat:file', (m) => {
 socket.on('chat:closed', () => {
   msgInput.disabled = true;
   sendBtn.disabled = true;
+});
+
+socket.on('chat:forwarded', ({ department }) => {
+  addText('bot', `Your chat has been forwarded to ${department}. Please wait for an agent.`, 'System', new Date().toISOString());
 });
 
 // Render FAQ suggestions
