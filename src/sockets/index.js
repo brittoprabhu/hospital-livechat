@@ -288,15 +288,33 @@ if (!Array.isArray(valid)) {
         if (fromDept === targetDept) {
           return socket.emit('agent:forward_failed', { reason: 'Already in department' });
         }
-        await pool.query(`UPDATE conversations SET department=$1, status='pending', assigned_agent_id=NULL, updated_at=NOW() WHERE id=$2`, [targetDept, chatId]);
+        const targetRes = await pool.query(
+          "SELECT id, name FROM agents WHERE department=$1 AND status='online' LIMIT 1",
+          [targetDept]
+        );
+        if (!targetRes.rowCount) {
+          return socket.emit('agent:forward_failed', { reason: 'No online agent in department' });
+        }
+        const target = targetRes.rows[0];
+        const sockets = await io.fetchSockets();
+        const targetSocket = sockets.find(s => s.data?.agentId && String(s.data.agentId) === String(target.id));
+        if (!targetSocket) {
+          return socket.emit('agent:forward_failed', { reason: 'Target agent offline' });
+        }
+        await pool.query(
+          "UPDATE conversations SET department=$1, assigned_agent_id=$2, status='active', updated_at=NOW() WHERE id=$3",
+          [targetDept, target.id, chatId]
+        );
         socket.leave(`chat_${chatId}`);
+        targetSocket.join(`chat_${chatId}`);
         await setAgentStatus(agentId, 'online');
+        await setAgentStatus(target.id, 'busy');
         await broadcastAgentPresence();
-        await broadcastPending(targetDept);
         io.to(`chat_${chatId}`).emit('chat:forwarded', { chatId, department: targetDept });
-        socket.emit('agent:forwarded', { chatId, department: targetDept });
-        // refresh pending list of original department if needed
+        io.to(`chat_${chatId}`).emit('chat:assigned', { chatId, agentName: target.name, assignedAgentId: target.id });
+        socket.emit('agent:forwarded', { chatId, department: targetDept, agentId: target.id });
         if (fromDept && fromDept !== targetDept) await broadcastPending(fromDept);
+        await broadcastPending(targetDept);
       } catch (e) {
         console.error(e);
         socket.emit('agent:forward_failed', { reason: 'Server error' });
