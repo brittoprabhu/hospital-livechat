@@ -61,12 +61,10 @@ export function socketHandlers(io, pool) {
     const items = await getPendingList(department);
     if (department) {
       const room = `dept_${department}`;
-      const sockets = await io.in(room).fetchSockets();
-      if (sockets.length) {
-        io.to(room).emit('agent:pending_list', items);
-      } else {
-        io.to('agents').emit('agent:pending_list', items);
-      }
+      // Notify agents in the specific department
+      io.to(room).emit('agent:pending_list', items);
+      // Also notify all other agents to keep global lists in sync
+      io.to('agents').except(room).emit('agent:pending_list', items);
     } else {
       io.to('agents').emit('agent:pending_list', items);
     }
@@ -360,12 +358,10 @@ export function makeBroadcastHelpers(io, pool) {
     if (department) {
       console.log(`[broadcastPending] Sending pending list to dept_${department}`);
       const room = `dept_${department}`;
-      const sockets = await io.in(room).fetchSockets();
-      if (sockets.length) {
-        io.to(room).emit('agent:pending_list', items);
-      } else {
-        io.to('agents').emit('agent:pending_list', items);
-      }
+      // Notify agents in the department
+      io.to(room).emit('agent:pending_list', items);
+      // And inform all other agents to keep them in sync
+      io.to('agents').except(room).emit('agent:pending_list', items);
     } else {
       console.log('[broadcastPending] Sending pending list to all agents');
       io.to('agents').emit('agent:pending_list', items);

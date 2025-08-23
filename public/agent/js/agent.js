@@ -9,6 +9,11 @@ if(!token || !department){
 let socket=null, currentChatId=null;
 let departmentInfo=[];
 
+const cachedPending = localStorage.getItem('pendingChats');
+if (cachedPending) {
+  renderPending(JSON.parse(cachedPending));
+}
+
 const statusHeader = document.getElementById('status');
 const pendingDiv = document.getElementById('pending');
 const messagesDiv = document.getElementById('messages');
@@ -23,6 +28,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 logoutBtn.onclick = ()=>{
   localStorage.removeItem('agentToken');
   localStorage.removeItem('agentDepartment');
+  localStorage.removeItem('pendingChats');
   if(socket) socket.disconnect();
   location.href = 'login.html';
 };
@@ -36,7 +42,10 @@ socket.on('agent:registered', ({ department })=>{
 socket.on('agent:department_counts', (rows)=>{
   departmentInfo = rows || [];
 });
-socket.on('agent:pending_list', renderPending);
+socket.on('agent:pending_list', (items)=>{
+  localStorage.setItem('pendingChats', JSON.stringify(items));
+  renderPending(items);
+});
 socket.on('agent:accept_failed', ({ reason })=> alert('Accept failed: '+reason));
 socket.on('agent:forward_failed', ({ reason })=> alert('Forward failed: '+reason));
 socket.on('agent:forwarded', ({ chatId:id })=>{
