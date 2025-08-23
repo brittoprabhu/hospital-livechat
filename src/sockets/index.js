@@ -303,6 +303,39 @@ if (!Array.isArray(valid)) {
       }
     });
 
+    // AGENT: forward chat directly to another agent
+    socket.on('agent:forward_agent', async ({ chatId, agentId: targetAgentId }) => {
+      try {
+        const agentId = socket.data?.agentId;
+        if (!agentId) return;
+        const { rows } = await pool.query('SELECT assigned_agent_id FROM conversations WHERE id=$1 LIMIT 1', [chatId]);
+        if (!rows.length || String(rows[0].assigned_agent_id) !== String(agentId)) {
+          return socket.emit('agent:forward_failed', { reason: 'Not assigned' });
+        }
+        const agentRow = await pool.query('SELECT id, name, department FROM agents WHERE id=$1 LIMIT 1', [targetAgentId]);
+        if (!agentRow.rowCount) {
+          return socket.emit('agent:forward_failed', { reason: 'Target agent not found' });
+        }
+        const target = agentRow.rows[0];
+        const sockets = await io.fetchSockets();
+        const targetSocket = sockets.find(s => s.data?.agentId && String(s.data.agentId) === String(targetAgentId));
+        if (!targetSocket) {
+          return socket.emit('agent:forward_failed', { reason: 'Target agent offline' });
+        }
+        await pool.query('UPDATE conversations SET assigned_agent_id=$1, department=$2, updated_at=NOW() WHERE id=$3', [target.id, target.department, chatId]);
+        socket.leave(`chat_${chatId}`);
+        targetSocket.join(`chat_${chatId}`);
+        await setAgentStatus(agentId, 'online');
+        await setAgentStatus(target.id, 'busy');
+        await broadcastAgentPresence();
+        io.to(`chat_${chatId}`).emit('chat:assigned', { chatId, agentName: target.name, assignedAgentId: target.id });
+        socket.emit('agent:forwarded', { chatId, agentId: target.id });
+      } catch (e) {
+        console.error(e);
+        socket.emit('agent:forward_failed', { reason: 'Server error' });
+      }
+    });
+
     socket.on('chat:close', async ({ chatId }) => {
       try {
         await pool.query(`UPDATE conversations SET status='closed', updated_at=NOW() WHERE id=$1`, [chatId]);
