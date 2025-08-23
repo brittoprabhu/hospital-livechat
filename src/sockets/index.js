@@ -51,19 +51,11 @@ export function socketHandlers(io, pool) {
   async function broadcastPending(department) {
     const items = await getPendingList(department);
     const room = `dept_${department}`;
-    let delivered = false;
-    for (const s of await io.in(room).fetchSockets()) {
-      if (s.data?.role === 'agent' && s.data.department === department) {
-        s.emit('agent:pending_list', items);
-        delivered = true;
-      }
-    }
-    if (!delivered) {
-      for (const s of await io.in('agents').fetchSockets()) {
-        if (s.data?.role === 'agent') {
-          s.emit('agent:pending_list', items);
-        }
-      }
+    const sockets = await io.in(room).fetchSockets();
+    if (sockets.length) {
+      io.to(room).emit('agent:pending_list', items);
+    } else {
+      io.to('agents').emit('agent:pending_list', items);
     }
   }
 
@@ -336,21 +328,12 @@ export function makeBroadcastHelpers(io, pool) {
   async function broadcastPending(department) {
     const items = await getPendingList(department);
     console.log(`[broadcastPending] Sending pending list to dept_${department}`);
-
     const room = `dept_${department}`;
-    let delivered = false;
-    for (const s of await io.in(room).fetchSockets()) {
-      if (s.data?.role === 'agent' && s.data?.department === department) {
-        s.emit('agent:pending_list', items);
-        delivered = true;
-      }
-    }
-    if (!delivered) {
-      for (const s of await io.in('agents').fetchSockets()) {
-        if (s.data?.role === 'agent') {
-          s.emit('agent:pending_list', items);
-        }
-      }
+    const sockets = await io.in(room).fetchSockets();
+    if (sockets.length) {
+      io.to(room).emit('agent:pending_list', items);
+    } else {
+      io.to('agents').emit('agent:pending_list', items);
     }
   }
 
