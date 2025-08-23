@@ -6,8 +6,15 @@ const loginMsg = document.getElementById('loginMsg');
 
 // populate departments
 fetch('/api/departments').then(r=>r.json()).then(d=>{
-  const list = (d.departments && d.departments.length) ? d.departments : ['Eye','Cardiology','Orthopedics','ENT','Neurology','General'];
-  list.forEach(dep=>{ const o=document.createElement('option'); o.value=o.textContent=dep; deptSel.appendChild(o); });
+  const list = (d.departments && d.departments.length)
+    ? d.departments.map(dep => dep.name)
+    : ['Eye','Cardiology','Orthopedics','ENT','Neurology','General'];
+  list.forEach(dep => {
+    const o = document.createElement('option');
+    o.value = dep;
+    o.textContent = dep;
+    deptSel.appendChild(o);
+  });
 });
 
 btnLogin.onclick = async ()=>{

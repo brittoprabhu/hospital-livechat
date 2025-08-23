@@ -39,10 +39,13 @@ async function loadDepartments() {
     const j = await res.json();
     const sel = document.getElementById('inviteDept');
     sel.innerHTML = '<option value="">Select department</option>';
-    const list = (j.departments && j.departments.length) ? j.departments
+    const list = (j.departments && j.departments.length)
+      ? j.departments.map(d => d.name)
       : ['Eye','Cardiology','Orthopedics','ENT','Neurology','General'];
-    list.forEach(d => {
-      const opt = document.createElement('option'); opt.value = d; opt.textContent = d;
+    list.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
       sel.appendChild(opt);
     });
   } catch (e) {
