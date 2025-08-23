@@ -28,6 +28,7 @@ btnLogin.onclick = async ()=>{
     if(!res.ok || !j.token){ loginMsg.textContent = j.error || 'Login failed'; return; }
     localStorage.setItem('agentToken', j.token);
     localStorage.setItem('agentDepartment', j.department);
+    localStorage.setItem('agentName', j.name);
     location.href = 'home.html';
   } catch(e){
     loginMsg.textContent = 'Network error';

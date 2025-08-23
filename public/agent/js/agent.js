@@ -2,14 +2,15 @@ import { connectAgentSocket } from './socket.js';
 
 const token = localStorage.getItem('agentToken');
 const department = localStorage.getItem('agentDepartment');
+const agentName = localStorage.getItem('agentName');
 if(!token || !department){
   location.href = 'login.html';
 }
 
 let socket=null, currentChatId=null;
-let departmentInfo=[];
 
 const statusHeader = document.getElementById('status');
+const nameHeader = document.getElementById('agentName');
 const pendingDiv = document.getElementById('pending');
 const messagesDiv = document.getElementById('messages');
 const msgInput = document.getElementById('msgInput');
@@ -23,18 +24,17 @@ const logoutBtn = document.getElementById('logoutBtn');
 logoutBtn.onclick = ()=>{
   localStorage.removeItem('agentToken');
   localStorage.removeItem('agentDepartment');
+  localStorage.removeItem('agentName');
   if(socket) socket.disconnect();
   location.href = 'login.html';
 };
 
 statusHeader.textContent='Connecting…';
+if(nameHeader && agentName) nameHeader.textContent = agentName;
 socket = connectAgentSocket(token, department);
 
 socket.on('agent:registered', ({ department })=>{
   statusHeader.textContent = `Online in ${department}`;
-});
-socket.on('agent:department_counts', (rows)=>{
-  departmentInfo = rows || [];
 });
 socket.on('agent:pending_list', renderPending);
 socket.on('agent:accept_failed', ({ reason })=> alert('Accept failed: '+reason));
@@ -97,18 +97,10 @@ sendFileBtn.onclick = async ()=>{
   }
 };
 
-forwardBtn.onclick = async ()=>{
+forwardBtn.onclick = ()=>{
   if(!currentChatId) return;
-  if(!departmentInfo.length){
-    const resp = await fetch('/api/departments');
-    const data = await resp.json();
-    departmentInfo = data.departments || [];
-  }
-  const list = departmentInfo.map(d=>`${d.name} (${d.online})`).join(', ');
-  const dept = prompt('Forward to department:\n'+list);
-  if(dept){
-    socket.emit('agent:forward', { chatId: currentChatId, department: dept.trim() });
-  }
+  const id = prompt('Forward to agent ID:');
+  if(id) socket.emit('agent:forward_agent', { chatId: currentChatId, agentId: id.trim() });
 };
 
 closeBtn.onclick = ()=>{
