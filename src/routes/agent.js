@@ -51,6 +51,19 @@ export default function AgentRoutes(pool) {
     } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
   });
 
+  router.get('/api/agents/department', async (req, res) => {
+    try {
+      const { email } = req.query;
+      if (!email) return res.status(400).json({ error: 'Email required' });
+      const result = await pool.query('SELECT department FROM agents WHERE email=$1 LIMIT 1', [String(email).toLowerCase()]);
+      if (!result.rowCount) return res.status(404).json({ error: 'Not found' });
+      res.json({ department: result.rows[0].department });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+
 // Example Express route
 router.get('/api/faqs/top', async (req, res) => {
   const faqs = await pool.query('SELECT id, question FROM faq_entries WHERE parent_id IS NULL ORDER BY id');
