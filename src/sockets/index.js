@@ -126,7 +126,6 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
 
     // Broadcast to agents in that department
     await broadcastPending(department);
-    await broadcastPending();
 
     console.log(`[patient:set_department] Chat ${chatId} set to department ${department}`);
   } catch (e) {
@@ -161,7 +160,6 @@ socket.on('patient:new_conversation', async ({ patientName }) => {
         }
         await pool.query('UPDATE conversations SET department=$1, updated_at=NOW() WHERE id=$2', [targetDept, chatId]);
         await broadcastPending(targetDept);
-        await broadcastPending();
       };
 
       await processBotMessage({ message: text, socket: io.to(`chat_${chatId}`), context, escalate });
