@@ -20,6 +20,10 @@ const sendFileBtn = document.getElementById('sendFileBtn');
 const closeBtn = document.getElementById('closeBtn');
 const forwardBtn = document.getElementById('forwardBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const forwardModal = document.getElementById('forwardModal');
+const forwardDept = document.getElementById('forwardDept');
+const forwardConfirm = document.getElementById('forwardConfirm');
+const forwardCancel = document.getElementById('forwardCancel');
 
 logoutBtn.onclick = ()=>{
   localStorage.removeItem('agentToken');
@@ -32,6 +36,8 @@ logoutBtn.onclick = ()=>{
 statusHeader.textContent='Connecting…';
 if(nameHeader && agentName) nameHeader.textContent = agentName;
 socket = connectAgentSocket(token, department);
+
+loadDepartments();
 
 socket.on('agent:registered', ({ department })=>{
   statusHeader.textContent = `Online in ${department}`;
@@ -99,8 +105,18 @@ sendFileBtn.onclick = async ()=>{
 
 forwardBtn.onclick = ()=>{
   if(!currentChatId) return;
-  const id = prompt('Forward to agent ID:');
-  if(id) socket.emit('agent:forward_agent', { chatId: currentChatId, agentId: id.trim() });
+  forwardModal.classList.remove('hidden');
+};
+
+forwardCancel.onclick = ()=>{
+  forwardModal.classList.add('hidden');
+};
+
+forwardConfirm.onclick = ()=>{
+  const dept = forwardDept.value;
+  if(!dept || !currentChatId) return;
+  socket.emit('agent:forward', { chatId: currentChatId, department: dept });
+  forwardModal.classList.add('hidden');
 };
 
 closeBtn.onclick = ()=>{
@@ -153,6 +169,22 @@ function addFileBubble(from, url, name, who, at){
   messagesDiv.appendChild(wrap); messagesDiv.scrollTop=messagesDiv.scrollHeight;
 }
 
+async function loadDepartments(){
+  try {
+    const res = await fetch('/api/departments', { cache:'no-store' });
+    const j = await res.json();
+    forwardDept.innerHTML = '<option value="">Select department</option>';
+    const list = (j.departments || []).map(d => d.name);
+    for(const name of list){
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      forwardDept.appendChild(opt);
+    }
+  } catch(e) {
+    console.error('departments load error', e);
+  }
+}
 
 toggleChatControls(false);
 
