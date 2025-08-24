@@ -59,15 +59,22 @@ export function socketHandlers(io, pool) {
 
   async function broadcastPending(department) {
     const items = await getPendingList(department);
+    const globalSockets = await io.in('agents').fetchSockets();
     if (department) {
       const room = `dept_${department}`;
-      const sockets = await io.in(room).fetchSockets();
-      if (sockets.length) {
+      const deptSockets = await io.in(room).fetchSockets();
+      console.log(
+        `[broadcastPending] dept=${department} deptSockets=${deptSockets.length} globalSockets=${globalSockets.length} items=${items.length}`
+      );
+      if (deptSockets.length) {
         io.to(room).emit('agent:pending_list', items);
       } else {
         io.to('agents').emit('agent:pending_list', items);
       }
     } else {
+      console.log(
+        `[broadcastPending] dept=none globalSockets=${globalSockets.length} items=${items.length}`
+      );
       io.to('agents').emit('agent:pending_list', items);
     }
   }
@@ -195,14 +202,17 @@ if (!Array.isArray(valid)) {
         console.log(`[agent:register] Agent ${payload.id} joined dept_${department}`);
         if (!payload || payload.role !== 'agent') return socket.emit('error', { message: 'Invalid agent token' });
         if (!department || !valid.includes(department)) return socket.emit('error', { message: 'Invalid department' });
-        
-         socket.join('agents'); // 👈 Join global room
+
+        socket.join('agents'); // 👈 Join global room
         socket.join(`dept_${department}`);
+        const rooms = Array.from(socket.rooms).join(',');
         socket.data.role = 'agent';
         socket.data.department = department;
         socket.data.agentId = String(payload.id);
 
-        console.log(`✅ Agent [${department}] and global agent room`);
+        console.log(
+          `✅ Agent ${payload.id} rooms after join: ${rooms}`
+        );
         socket.emit('agent:registered', { agentId: payload.id, department });
 
         await setAgentStatus(payload.id, 'online');
@@ -408,17 +418,22 @@ export function makeBroadcastHelpers(io, pool) {
 
   async function broadcastPending(department) {
     const items = await getPendingList(department);
+    const globalSockets = await io.in('agents').fetchSockets();
     if (department) {
-      console.log(`[broadcastPending] Sending pending list to dept_${department}`);
       const room = `dept_${department}`;
-      const sockets = await io.in(room).fetchSockets();
-      if (sockets.length) {
+      const deptSockets = await io.in(room).fetchSockets();
+      console.log(
+        `[broadcastPending] dept=${department} deptSockets=${deptSockets.length} globalSockets=${globalSockets.length} items=${items.length}`
+      );
+      if (deptSockets.length) {
         io.to(room).emit('agent:pending_list', items);
       } else {
         io.to('agents').emit('agent:pending_list', items);
       }
     } else {
-      console.log('[broadcastPending] Sending pending list to all agents');
+      console.log(
+        `[broadcastPending] dept=none globalSockets=${globalSockets.length} items=${items.length}`
+      );
       io.to('agents').emit('agent:pending_list', items);
     }
   }

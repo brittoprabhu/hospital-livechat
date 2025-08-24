@@ -53,6 +53,9 @@ export async function escalateToHuman({
   }
 
   // 3) Notify agents in department that a new pending chat is available
+  console.log(
+    `[escalateToHuman] chatId=${chatId} department=${department} notifying agents`
+  );
   await broadcastPending(department);
 
   // Optionally, join a socket room if you have a user socket here (not in this service)
