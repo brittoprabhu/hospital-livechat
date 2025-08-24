@@ -3,6 +3,10 @@ import { connectWidgetSocket } from './socket.js';
 const socket = connectWidgetSocket();
 let chatId = null;
 
+function clearDepartmentCookie() {
+  document.cookie = 'department=; Max-Age=0; path=/';
+}
+
 // DOM elements
 const deptSel = document.getElementById('department');
 const startChatBtn = document.getElementById('startChatBtn');
@@ -28,6 +32,7 @@ startChatBtn.onclick = () => {
   }
 
   console.log('[Chat] Starting new conversation as:', patientName);
+  clearDepartmentCookie();
   socket.emit('patient:new_conversation', { patientName });
 
   // UI updates
