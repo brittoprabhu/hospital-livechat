@@ -1,0 +1,77 @@
+:root {
+  --brand-50: #eefdf4;
+  --brand-100: #d7f8e4;
+  --brand-200: #aaf0c7;
+  --brand-300: #75e4a6;
+  --brand-400: #3bd77f;
+  --brand-500: #12c969;
+  --brand-600: #0aa356;
+  --brand-700: #0a8147;
+  --brand-800: #0a653b;
+  --brand-900: #0a5433;
+}
+
+/* Background utilities */
+.bg-brand-600 {
+  background-color: var(--brand-600) !important;
+}
+
+.hover\:bg-brand-700:hover {
+  background-color: var(--brand-700) !important;
+}
+
+/* Border utilities */
+.border-brand-500,
+.focus\:border-brand-500:focus {
+  border-color: var(--brand-500) !important;
+}
+
+.border-brand-600,
+.focus\:border-brand-600:focus,
+.hover\:border-brand-600:hover {
+  border-color: var(--brand-600) !important;
+}
+
+/* Ring utilities */
+.focus\:ring-brand-500:focus {
+  --tw-ring-color: var(--brand-500) !important;
+  --tw-ring-opacity: 1 !important;
+}
+
+.focus\:ring-brand-600:focus {
+  --tw-ring-color: var(--brand-600) !important;
+  --tw-ring-opacity: 1 !important;
+}
+
+/* Text utilities */
+.text-brand-600 {
+  color: var(--brand-600) !important;
+}
+
+/* Theme swatches */
+.theme-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.05);
+}
+
+.theme-swatch.is-active {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+  transform: scale(1.12);
+}
+
+.theme-swatch:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
